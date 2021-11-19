@@ -1,0 +1,174 @@
+library(data.table)
+library(dplyr)
+library(psych)
+library(stringr)
+library(lme4)
+library(car)
+library(ggplot2)
+library(sjPlot)
+library(ggeffects)
+library(reghelper)
+
+
+files <- dir("./results/alphabet/approved", ".*csv$", full.names=TRUE)  # Specify data folder (alphabet or imagenet)
+dat <- c()
+
+for (i in 1: length(files)){
+  d <- fread(files[i], header=TRUE)
+  d <- d[, c("TF", "size", "rate", "pos", "ori", "reactionTime")]
+
+  d$size <- as.character(d$size)
+  d$rate <- as.character(d$rate)
+  d$pos <- as.factor(d$pos)
+  d$arrange <- paste(d$size, d$rate, sep = "")
+  d$id <- i  # Glmer requires numeric variable for subject id
+
+  d %>%
+    mutate(arrange=gsub(arrange, pattern="11", replacement="[1, 1, 1]", ignore.case=TRUE)) %>%
+    mutate(arrange=gsub(arrange, pattern="12", replacement="[1, 2, 4]", ignore.case=TRUE)) %>%
+    mutate(arrange=gsub(arrange, pattern="21", replacement="[2, 2, 2]", ignore.case=TRUE)) %>%
+    mutate(arrange=gsub(arrange, pattern="22", replacement="[2, 4, 8]", ignore.case=TRUE)) ->
+    d
+
+  d %>%
+    mutate(pos=gsub(pos, pattern="1", replacement="3.83")) %>%
+    mutate(pos=gsub(pos, pattern="0", replacement="1.41")) %>%
+    mutate(pos=gsub(pos, pattern="2", replacement="8.06")) ->
+    d
+  d$pos <- as.numeric(d$pos)
+
+  dat <- rbind(dat, d)
+}
+dat <- dat[dat$TF=="TRUE",]  # Extract TF==TRUE
+# When using imagenet results, execute below one line
+dat <- mutate(dat, pos=pos/10)
+dat <- na.omit(dat)  # Fill NA
+
+
+# Random slope glmm
+# No interaction
+f0 <- glmer(reactionTime ~ poly(pos, 2, raw = TRUE) + arrange + (1 + poly(pos, 2, raw = TRUE) + arrange|id), data = dat, family = inverse.gaussian(link="identity"), control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))  # Polynomial model
+f1 <- glmer(reactionTime ~ pos + arrange + pos:arrange + (1 + pos + arrange|id), data=dat, family=inverse.gaussian(link="identity"), control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))
+f2 <- glmer(reactionTime ~ poly(pos, 2, raw = TRUE) + arrange + poly(pos, 2, raw = TRUE):arrange + (1 + poly(pos, 2, raw = TRUE) + arrange|id), data = dat, family = inverse.gaussian(link="identity"), control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e5)))  # Polynomial model
+
+
+summary(f0)
+
+summary(f1)  # Wald tests for parameter estimates
+Anova(f1)  # Type II Wald chisquare test by car package
+plot(f1)  # Residual plot
+ranef(f1)  # Distribution of individual estimates (as deviation from the global estimate)
+
+summary(f2)  # Wald tests for parameter estimates
+Anova(f2)  # Type II Wald chisquare test by car package
+plot(f2)  # Residual plot
+ranef(f2)  # Distribution of individual estimates (as deviation from the global estimate)
+
+
+# Visualize predicted models
+plot_model(f0, type="pred", terms=c("pos [all]","arrange"), colors=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732"))
+plot_model(f1, type="pred", terms=c("pos","arrange"), colors=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732"))
+plot_model(f2, type="pred", terms=c("pos [all]","arrange"), colors=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732"))
+# plot_model(f2, type="pred", terms=c("pos [all]","arrange"), colors=c("#E93732", "#5EC93B", "#F07A3B", "#1244F4"))
+
+
+# Predict slopes
+predicted_slopes <- simple_slopes(f1)
+# Visualize simple slopes
+predicted_slopes[10:13,] %>%
+  rename("PredictedSlope"=3, "Std.Error"=4) %>%
+  mutate(PredictedSlope=PredictedSlope/10) %>%
+  mutate(Std.Error=Std.Error/10) %>%
+  ggplot(aes(x=arrange, y=PredictedSlope)) +
+  geom_errorbar(aes(ymin=PredictedSlope-Std.Error*1.96, ymax=PredictedSlope+Std.Error*1.96), size=1.2, width=0.4, colour=c("#A1C8F5", "#F4B281", "#8DE4A0", "#F29F9A")) +
+  geom_point(size=3.5, colour=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732")) +
+  theme(axis.title.x=element_text(size=18),axis.title.y=element_text(size=18)) +
+  theme(axis.text.x=element_text(size=18),axis.text.y=element_text(size=18)) +
+  theme(legend.title=element_text(size=18),legend.text=element_text(size=18)) +
+  scale_y_continuous(limits=c(-0.20, 0.20)) ->
+  g
+g
+# Visualize quadratic slopes
+# alphabet
+PredictedSlope <- c(0.50005/100, 1.6637/100, 1.1211/100, 2.8002/100)
+row_std_error <- c(0.51506/100, 0.5333/100, 0.5098/100, 0.4667/100)
+
+arrange <- c("[1,1,1]", "[1,2,4]", "[2,2,2]", "[2,4,8]")
+slope_df <- data.frame(PredictedSlope, row_std_error, arrange)
+
+slope_df %>%
+  ggplot(aes(x=arrange, y=PredictedSlope)) +
+  geom_errorbar(aes(ymin=PredictedSlope-row_std_error*1.96, ymax=PredictedSlope+row_std_error*1.96), size=1.2, width=0.4, colour=c("#A1C8F5", "#F4B281", "#8DE4A0", "#F29F9A")) +
+  geom_point(size=3.5, colour=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732")) +
+  theme(axis.title.x=element_text(size=18),axis.title.y=element_text(size=18)) +
+  theme(axis.text.x=element_text(size=18),axis.text.y=element_text(size=18)) +
+  theme(legend.title=element_text(size=18),legend.text=element_text(size=18)) +
+  scale_y_continuous(limits=c(-0.10, 0.10)) ->
+  g
+g
+
+
+# Visualize reactionTime by arrangement
+dat[arrange=="[1, 1, 1]",] %>%
+  ggplot(aes(x=pos, y=reactionTime)) +
+  geom_point() +
+  stat_summary(fun.y="mean", fun.ymin=function(x)mean(x), fun.ymax=function(x)mean(x), geom="crossbar", colour="#EC4C4D", width=0.2) ->
+  g_11
+g_11
+dat[arrange=="[1, 2, 4]",] %>%
+  ggplot(aes(x=pos, y=reactionTime)) +
+  geom_point() +
+  stat_summary(fun.y="mean", fun.ymin=function(x)mean(x), fun.ymax=function(x)mean(x), geom="crossbar", colour="#EC4C4D", width=0.2) ->
+  g_12
+g_12
+dat[arrange=="[2, 2, 2]",] %>%
+  ggplot(aes(x=pos, y=reactionTime)) +
+  geom_point() +
+  stat_summary(fun.y="mean", fun.ymin=function(x)mean(x), fun.ymax=function(x)mean(x), geom="crossbar", colour="#EC4C4D", width=0.2) ->
+  g_21
+g_21
+dat[arrange=="[2, 4, 8]",] %>%
+  ggplot(aes(x=pos, y=reactionTime)) +
+  geom_point() +
+  stat_summary(fun.y="mean", fun.ymin=function(x)mean(x), fun.ymax=function(x)mean(x), geom="crossbar", colour="#EC4C4D", width=0.2) ->
+  g_22
+g_22
+
+
+# Visualize average reactionTime by arrangement
+dat_11 <- dat[arrange=="[1, 1, 1]",]
+dat_12 <- dat[arrange=="[1, 2, 4]",]
+dat_21 <- dat[arrange=="[2, 2, 2]",]
+dat_22 <- dat[arrange=="[2, 4, 8]",]
+rbind(
+  mutate(aggregate(reactionTime~pos, data=dat_11, FUN=mean), arrange="[1, 1, 1]"),
+  mutate(aggregate(reactionTime~pos, data=dat_12, FUN=mean), arrange="[1, 2, 4]"),
+  mutate(aggregate(reactionTime~pos, data=dat_21, FUN=mean), arrange="[2, 2, 2]"),
+  mutate(aggregate(reactionTime~pos, data=dat_22, FUN=mean), arrange="[2, 4, 8]")
+) %>%
+  ggplot(aes(x=pos, y=reactionTime, group=arrange, colour=arrange)) +
+  geom_line() + 
+  scale_color_manual(values=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732")) ->
+  g
+g
+
+
+# Visualize average reactionTime by arrangement (all positions)
+rbind(
+  mutate(describe(dat_11[, "reactionTime"])[, c("mean", "se")], arrange="[1, 1, 1]"),
+  mutate(describe(dat_12[, "reactionTime"])[, c("mean", "se")], arrange="[1, 2, 4]"),
+  mutate(describe(dat_21[, "reactionTime"])[, c("mean", "se")], arrange="[2, 2, 2]"),
+  mutate(describe(dat_22[, "reactionTime"])[, c("mean", "se")], arrange="[2, 4, 8]")
+) %>%
+  rename("averageRT"="mean") %>%
+  ggplot(aes(x=arrange, y=averageRT)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=averageRT-se*1.96, ymax=averageRT+se*1.96), size=1.2, width = 0.4, colour=c("#A1C8F5", "#F4B281", "#8DE4A0", "#F29F9A")) +
+  geom_point(size=3.5, colour=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732")) +
+  theme(axis.title.x=element_text(size=18),axis.title.y=element_text(size=18)) +
+  theme(axis.text.x=element_text(size=18),axis.text.y=element_text(size=18)) +
+  theme(legend.title=element_text(size=18),legend.text=element_text(size=18)) +
+  scale_y_continuous(limits=c(3.0, 4.5)) ->
+  g_ave
+g_ave
+
