@@ -73,8 +73,13 @@ f2 <- glmer(reactionTime ~ invS + pos + invS:pos + (1 + invS + pos|id), data=dat
 plot_model(f1, type="pred", terms=c("stimSize", "pos"))
 plot_model(f2, type="pred", terms=c("invS", "pos")) +
   scale_x_continuous(breaks=c(0.125,0.25,0.5,1.00,2.00))
+x <- seq(0, 10, len=100)
 plot_model(f2, type="pred", terms=c("invS", "pos"), colors=c("#1245F5", "#F17B3B", "#5FC93A")) +  # From seaborn "bright" color palette
-  scale_x_continuous(name="S", trans="reverse", breaks=c(0.125,0.25,0.5,1.00,2.00), labels=c(8,4,2,1,0.5))
+  scale_x_continuous(name="S", trans="reverse", breaks=c(0.0625,0.125,0.25,0.5,1.00,2.00), labels=c(16,8,4,2,1,0.5)) +
+  theme(axis.title.x = element_text(size=18), axis.title.y = element_text(size=18)) +
+  theme(axis.text.x = element_text(size=18), axis.text.y = element_text(size=18)) +
+  theme(legend.title = element_text(size=18), legend.text = element_text(size=18)) +
+  geom_line(aes(x=x,y=x*0+3.319), size=0.7, linetype="dashed", colour="#00215A")
 
 
 # log(μ) = β0 + β1x1(S^-1) + β2x2(pos=3.83, 0or1) + β3x3(pos=8.06, 0or1) + β4x1x2 + β5x1x3
