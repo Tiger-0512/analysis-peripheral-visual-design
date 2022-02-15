@@ -75,7 +75,8 @@ line_0 <- ggplot(class_mean[1:27,], aes(x=pos, y=reactionTime, color=Arrange)) +
   scale_y_continuous(limits=c(2.0, 4.0)) +
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
-  theme(legend.title=element_text(size=24),legend.text=element_text(size=20)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=28)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
   labs(x="Eccentircity (deg)", y="Reaction Time (sec)", color="Arrange")
 line_1 <- ggplot(class_mean[28:54,], aes(x=pos, y=reactionTime, color=Arrange)) +
   geom_line() +
@@ -83,7 +84,8 @@ line_1 <- ggplot(class_mean[28:54,], aes(x=pos, y=reactionTime, color=Arrange)) 
   scale_y_continuous(limits=c(2.0, 4.0)) +
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
-  theme(legend.title=element_text(size=24),legend.text=element_text(size=20)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=28)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
   labs(x="Eccentircity (deg)", y="Reaction Time (sec)", color="Arrange")
 line_2 <- ggplot(class_mean[55:81,], aes(x=pos, y=reactionTime, color=Arrange)) +
   geom_line() +
@@ -91,7 +93,8 @@ line_2 <- ggplot(class_mean[55:81,], aes(x=pos, y=reactionTime, color=Arrange)) 
   scale_y_continuous(limits=c(2.0, 4.0)) +
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
-  theme(legend.title=element_text(size=24),legend.text=element_text(size=20)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=28)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
   labs(x="Eccentircity (deg)", y="Reaction Time (sec)", color="Arrange")
 gridExtra::grid.arrange(line_0,line_1,line_2, ncol=3)
 

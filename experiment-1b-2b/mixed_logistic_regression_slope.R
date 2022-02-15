@@ -75,7 +75,13 @@ ranef(f2)  # Distribution of individual estimates (as deviation from the global 
 
 # Visualize predicted models
 plot_model(f0, type="pred", terms=c("pos[all]", "arrange"), colors=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732"))
-plot_model(f1, type="pred", terms=c("pos", "arrange"), colors=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732"))
+plot_model(f1, type="pred", terms=c("pos", "arrange"), colors=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732")) +
+  scale_x_continuous(breaks=c(1.41,3.83,8.06), limits=c(1.2,8.2)) +
+  theme(axis.title.x=element_text(size=36), axis.title.y=element_text(size=30)) +
+  theme(axis.text.x=element_text(size=30), axis.text.y=element_text(size=30)) +
+  theme(legend.title=element_text(size=30), legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
+  labs(x="Eccentricity (deg)", y="Accuracy")
 plot_model(f2, type="pred", terms=c("pos[all]", "arrange"), colors=c("#1244F4", "#F07A3B", "#5EC93B", "#E93732"))
 
 # Predict slopes

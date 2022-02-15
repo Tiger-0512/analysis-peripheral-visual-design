@@ -80,13 +80,10 @@ plot_model(f2, type="pred", terms=c("invS", "pos")) +
 x <- seq(0, 10, len=100)
 plot_model(f2, type="pred", terms=c("invS", "pos"), colors=c("#1245F5","#F17B3B","#5FC93A")) +  # From seaborn "bright" color palette
   scale_x_continuous(trans="reverse", breaks=c(0.0625,0.125,0.25,0.5,1.00,2.00), labels=c(16,8,4,2,1,0.5)) +
-  theme(axis.title.x = element_text(size=18), axis.title.y = element_text(size=18)) +
-  theme(axis.text.x = element_text(size=18), axis.text.y = element_text(size=18)) +
-  theme(legend.title = element_text(size=18), legend.text = element_text(size=18)) +
   geom_line(aes(x=x,y=x*0+3.319), size=0.7, linetype="dashed", colour="#00215A") +
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
-  theme(legend.title=element_text(size=24),legend.text=element_text(size=24)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=30)) +
   ggtitle("") +
   labs(x="Area of Stimuli", y="Reaction Time (sec)") ->
   p_S

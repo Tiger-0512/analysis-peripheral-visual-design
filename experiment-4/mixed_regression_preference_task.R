@@ -8,6 +8,7 @@ library(ggplot2)
 library(ggeffects)
 library(readr)
 library(reghelper)
+library(optimx)
 
 
 files <- dir("./approved", ".*csv$", full.names=TRUE)  # Specify data folder (alphabet or imagenet)
@@ -106,10 +107,12 @@ dat_errorbar %>%
   scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5), limits=c(-0.05, 0.5)) +
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
-  theme(legend.title=element_text(size=24),legend.text=element_text(size=24)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
   labs(x="Ranking", y="Selection Rate", color="Arrange", shape="Arrange") +
   scale_color_hue(labels=c(magnified="Magnified", standard="Standard")) +
-  scale_shape(labels=c(magnified="Magnified", standard="Standard")) ->
+  scale_shape(labels=c(magnified="Magnified", standard="Standard")) +
+  guides(colour=guide_legend(reverse=TRUE), shape=guide_legend(reverse=TRUE)) ->
   p_errorbar
 p_errorbar
 
@@ -128,9 +131,9 @@ dat_order_each_level$order <- as.integer(dat_order_each_level$order)
 dat_order_each_level <- dat_order_each_level[order(dat_order_each_level$order),]
 dat_order_each_level <- mutate(group_by(dat_order_each_level, arrange_level), cumulative_rate=cumsum(rate))
 dat_order_each_level %>%
-  mutate(arrange_level=gsub(arrange_level, pattern="1", replacement="3.83")) %>%
-  mutate(arrange_level=gsub(arrange_level, pattern="0", replacement="1.41")) %>%
-  mutate(arrange_level=gsub(arrange_level, pattern="2", replacement="8.06")) %>%
+  mutate(level=gsub(level, pattern="1", replacement="3.83")) %>%
+  mutate(level=gsub(level, pattern="0", replacement="1.41")) %>%
+  mutate(level=gsub(level, pattern="2", replacement="8.06")) %>%
   ggplot(aes(x=order, y=cumulative_rate, color=arrange, shape=level)) +
   geom_line() +
   geom_point(size=4) +
@@ -138,9 +141,11 @@ dat_order_each_level %>%
   scale_y_continuous(breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), limits=c(-0.01, 1.01)) +
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
-  theme(legend.title=element_text(size=24),legend.text=element_text(size=24)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,0), legend.justification=c(1,0)) +
   labs(x="Ranking", y="Cumulative Rate", color="Arrange", shape="Level") +
-  scale_color_hue(labels=c(magnified="Magnified", standard="Standard")) ->
+  scale_color_hue(labels=c(magnified="Magnified", standard="Standard")) +
+  guides(colour=guide_legend(reverse=TRUE)) ->
   p_order_each_level
 p_order_each_level
 
@@ -156,9 +161,11 @@ dat_order_each_level %>%
   scale_y_continuous(breaks=c(0, 0.1, 0.2, 0.3, 0.4), limits=c(0, 0.4)) +
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
-  theme(legend.title=element_text(size=24),legend.text=element_text(size=24)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
   labs(x="Ranking", y="Selection Rate", color="Arrange", shape="Level") +
-  scale_color_hue(labels=c(magnified="Magnified", standard="Standard")) ->
+  scale_color_hue(labels=c(magnified="Magnified", standard="Standard")) +
+  guides(colour=guide_legend(reverse=TRUE)) ->
   p_each_order_rate_level
 p_each_order_rate_level
 
@@ -268,6 +275,7 @@ dat_extracted %>%
   mutate(level=gsub(level, pattern="2", replacement="8.06")) ->
   dat_each_level
 dat_each_level$level <- as.numeric(dat_each_level$level)
+# Point + ErrorBar
 dat_each_level %>%
   ggplot(aes(x=level, y=mean, color=arrange, shape=arrange)) +
   geom_errorbar(aes(ymax=mean+sd/sqrt(56-1)*1.96, ymin=mean-sd/sqrt(56-1)*1.96)) +
@@ -278,6 +286,23 @@ dat_each_level %>%
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
   theme(legend.title=element_text(size=24),legend.text=element_text(size=24)) +
   labs(x="Eccentricity (deg)", y="Selection Rate", color="Arrange", shape="Arrange") ->
+  p_each_level
+p_each_level
+# Point + Line
+dat_each_level %>%
+  ggplot(aes(x=level, y=mean, color=arrange, shape=arrange)) +
+  geom_line() +
+  geom_point(size=4) +
+  scale_x_continuous(breaks=c(1.41, 3.83, 8.06)) +
+  scale_y_continuous(limits=c(0, 1)) +
+  theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
+  theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
+  labs(x="Eccentricity (deg)", y="Selection Rate", color="Arrange", shape="Arrange") +
+  scale_color_hue(labels=c(standard="Standard", magnified="Magnified")) +
+  scale_shape(labels=c(standard="Standard", magnified="Magnified")) +
+  guides(shape=guide_legend(reverse=TRUE), colour=guide_legend(reverse=TRUE)) ->
   p_each_level
 p_each_level
 
@@ -381,6 +406,7 @@ dat_cc_area %>%
   group_by(level, arrange) %>%
   summarise(mean=mean(area_normalized), sd=sd(area_normalized)) ->
   dat_cc_errorbar
+# Point + ErrorBar
 dat_cc_errorbar %>%
   ggplot(aes(x=level, y=mean, color=arrange, shape=arrange)) +
   geom_errorbar(aes(ymax=mean+sd/sqrt(56-1)*1.96, ymin=mean-sd/sqrt(56-1)*1.96)) +
@@ -391,6 +417,21 @@ dat_cc_errorbar %>%
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
   theme(legend.title=element_text(size=24),legend.text=element_text(size=24)) +
   labs(x="Eccentricity (deg)", y="Area Under Cumulative Curve (Normalized)", color="Arrange", shape="Arrange")
+# Point + Line
+dat_cc_errorbar %>%
+  ggplot(aes(x=level, y=mean, color=arrange, shape=arrange)) +
+  geom_line() +
+  geom_point(size=4) +
+  scale_x_continuous(breaks=c(1.41, 3.83, 8.06)) +
+  scale_y_continuous(breaks=seq(0, 1, by=0.2), limits=c(-0.1, 1.1)) +
+  theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=30)) +
+  theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
+  theme(legend.title=element_text(size=30),legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
+  labs(x="Eccentricity (deg)", y="Area Under Cumulative Curve (Normalized)", color="Arrange", shape="Arrange") +
+  scale_color_hue(labels=c(standard="Standard", magnified="Magnified")) +
+  scale_shape(labels=c(standard="Standard", magnified="Magnified")) +
+  guides(shape=guide_legend(reverse=TRUE), colour=guide_legend(reverse=TRUE))
 
 # Swapped DataFrame
 dat_cc_area %>%
@@ -401,11 +442,20 @@ dat_cc_area %>%
 
 # Simple Regression
 f_cc <- lmer(area_normalized ~ arrange + level + arrange:level + (1 + arrange + level|id), data=dat_cc_area)
+f_cc <- lmer(area_normalized ~ arrange + level + arrange:level + (1 + arrange + level|id), data=dat_cc_area, control = lmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')))  # 3 sec
 f_cc_swap <- lmer(area_normalized ~ arrange + level + arrange:level + (1 + arrange + level|id), data=dat_cc_area_swap)
-plot_model(f_cc, type="pred", terms=c("level", "arrange"))
+plot_model(f_cc, type="pred", terms=c("level", "arrange")) +
+  scale_x_continuous(breaks=c(1.41,3.83,8.06), limits=c(1.2,8.2)) +
+  theme(axis.title.x=element_text(size=36), axis.title.y=element_text(size=30)) +
+  theme(axis.text.x=element_text(size=30), axis.text.y=element_text(size=30)) +
+  theme(legend.title=element_text(size=30), legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
+  labs(x="Eccentricity (deg)", y="Area Under Cumulative Curve (Normalized)", color="Arrange") +
+  guides(colour=guide_legend(reverse=TRUE))
 
 # Polynomial Regression
 f_cc_q <- lmer(area_normalized ~ poly(level, 2, raw=TRUE) + arrange + poly(level, 2, raw=TRUE):arrange + (1 + poly(level, 2, raw=TRUE) + arrange|id), data=dat_cc_area)
+f_cc_q <- lmer(area_normalized ~ poly(level, 2, raw=TRUE) + arrange + poly(level, 2, raw=TRUE):arrange + (1 + poly(level, 2, raw=TRUE) + arrange|id), data=dat_cc_area, control = lmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')))
 f_cc_q_swap <- lmer(area_normalized ~ poly(level, 2, raw=TRUE) + arrange + poly(level, 2, raw=TRUE):arrange + (1 + poly(level, 2, raw=TRUE) + arrange|id), data=dat_cc_area_swap)
 plot_model(f_cc_q, type="pred", terms=c("level [all]", "arrange"))
 
@@ -422,7 +472,8 @@ simple_coefficients_cc %>%
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
   theme(legend.position="none") +
-  labs(x="Arrange", y="First-Order Coefficient") ->
+  labs(x="Arrange", y="First-Order Coefficient") +
+  scale_x_discrete(limit=c('Standard', 'Magnified')) ->
   p_simple_slopes_cc
 p_simple_slopes_cc
 
@@ -438,7 +489,8 @@ quadratic_coefficients_cc %>%
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
   theme(legend.position="none") +
-  labs(x="Arrange", y="Second-Order Coefficient") ->
+  labs(x="Arrange", y="Second-Order Coefficient") +
+  scale_x_discrete(limit=c('Standard', 'Magnified')) ->
   p_quadratic_slopes_cc
 p_quadratic_slopes_cc
 
@@ -477,7 +529,14 @@ f_logistic_q <- glmer(cbind(n, 80-n) ~ poly(level, 2, raw=TRUE) + arrange + poly
 f_logistic_q_swap <- glmer(cbind(n, 80-n) ~ poly(level, 2, raw=TRUE) + arrange + poly(level, 2, raw=TRUE):arrange + (1 + poly(level, 2, raw=TRUE) + arrange|id), data=dat_logistic_swap, family="binomial", control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e6)))
 # No Interaction
 f_logistic_q_ni <- glmer(cbind(n, 80-n) ~ poly(level, 2, raw=TRUE) + arrange + (1 + poly(level, 2, raw=TRUE) + arrange|id), data=dat_logistic, family="binomial", control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e6)))
-plot_model(f_logistic_q, type="pred", terms=c("level [all]", "arrange"))
+plot_model(f_logistic_q, type="pred", terms=c("level [all]", "arrange")) +
+  scale_x_continuous(breaks=c(1.41,3.83,8.06), limits=c(1.2,8.2)) +
+  theme(axis.title.x=element_text(size=36), axis.title.y=element_text(size=30)) +
+  theme(axis.text.x=element_text(size=30), axis.text.y=element_text(size=30)) +
+  theme(legend.title=element_text(size=30), legend.text=element_text(size=30)) +
+  theme(legend.position=c(1,0), legend.justification=c(1,0)) +
+  labs(x="Eccentricity (deg)", y="Selection Rate", color="Arrange") +
+  guides(colour=guide_legend(reverse=TRUE))
 
 # Simple Slopes
 arrange <- c("Magnified", "Standard")
@@ -492,7 +551,8 @@ simple_coefficients %>%
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30)) +
   theme(legend.position="none") +
-  labs(x="Arrange", y="First-Order Coefficient") ->
+  labs(x="Arrange", y="First-Order Coefficient") +
+  scale_x_discrete(limit=c('Standard', 'Magnified')) ->
   p_simple_slopes
 p_simple_slopes
 
@@ -508,6 +568,7 @@ quadratic_coefficients %>%
   theme(axis.title.x=element_text(size=36),axis.title.y=element_text(size=36)) +
   theme(axis.text.x=element_text(size=30),axis.text.y=element_text(size=30))  +
   theme(legend.position="none") +
-  labs(x="Arrange", y="Second-Order Coefficient") ->
+  labs(x="Arrange", y="Second-Order Coefficient") +
+  scale_x_discrete(limit=c('Standard', 'Magnified')) ->
   p_quadratic_slopes
 p_quadratic_slopes
