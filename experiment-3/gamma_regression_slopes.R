@@ -49,16 +49,16 @@ dat <- dat[dat$TF=="TRUE",]  # Extract TF==TRUE
 # f2 <- glmer(reactionTime ~ poly(pos, 2, raw = TRUE) + arrange + poly(pos, 2, raw = TRUE):arrange + (1 + poly(pos, 2, raw = TRUE) + arrange|id), data = dat, family = inverse.gaussian(), control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 2e6)))  # Polynomial model
 
 # Show the average reaction time of each participant in each arrangement
-basic_sizes <- c(1.277, 1.437, 5.344)
+basic_sizes <- c(1.28, 1.44, 5.34)
 to_rate <- c(2/3, 1, 3/2)
 Arrange <- c()
 for (i in 1: 3) {
   for (j in 1: 3) {
     for (k in 1: 3) {
       str <- paste(
-        round(basic_sizes[1]*to_rate[i], digits=3), 
-        round(basic_sizes[2]*to_rate[j], digits=3),
-        round(basic_sizes[3]*to_rate[k], digits=3)
+        round(basic_sizes[1]*to_rate[i], digits=2), 
+        round(basic_sizes[2]*to_rate[j], digits=2),
+        round(basic_sizes[3]*to_rate[k], digits=2)
       )
       Arrange <- c(Arrange, str)
     }
